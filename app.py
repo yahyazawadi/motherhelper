@@ -1,5 +1,7 @@
-from flask import Flask
+from flask import Flask, request
 import logging
+import os
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime, timedelta
 import pytz
@@ -11,19 +13,23 @@ from typing import Final
 # Initialize Flask app
 app = Flask(__name__)
 
+# Get the bot token from environment variables
+TOKEN: Final = os.getenv('TELEGRAM_TOKEN')
+BOT_USERNAME: Final = '@mother_python_helper_bot'
+
+# Initialize the Telegram bot application
+application = Application.builder().token(TOKEN).build()
+
 # Dummy route for Flask to serve
 @app.route('/')
 def hello_world():
     return 'Hello, World! The bot is running.'
 
-# Your Telegram bot code below
-TOKEN: Final = '6760459910:AAFUSNruwV6IFn_uZvQho-ubZJpAwXU8zig'
-BOT_USERNAME: Final = '@mother_python_helper_bot'
-
-async def start_command(update, context: ContextTypes.DEFAULT_TYPE):
+# Command Handlers for Telegram bot
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I'm here to help. Send me some text, and I'll process it for you.")
 
-async def help_command(update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "You can use this bot to process text in various ways. Here's how:\n"
         "- Just send any text directly to me, and I'll do some processing on it.\n"
@@ -76,7 +82,7 @@ async def process_text(text: str, input_date: datetime, rotation_count: int) -> 
     header_and_footer = "🕋☪️🕋☪️🕋☪️🕋☪️🕋"
     return f"{header_and_footer}\n🕋ختمتي القرآن الحلبوني والفرج\n🕋{current_day}\n🕋{current_date}\n🕋{islamic_date}\n{header_and_footer}\n" + "\n".join(numbered_text)
 
-async def handle_message(update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text: str = update.message.text
     input_date = extract_date(text)
     
@@ -98,15 +104,26 @@ async def handle_message(update, context: ContextTypes.DEFAULT_TYPE):
 
         attempts += 1
 
-def run_telegram_bot():
-    application = Application.builder().token(TOKEN).build()
+# Add Telegram bot command and message handlers
+application.add_handler(CommandHandler("start", start_command))
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+# Telegram webhook route
+@app.route(f"/{TOKEN}", methods=["POST"])
+def telegram_webhook():
+    update = Update.de_json(request.get_json(), application.bot)
+    application.update_queue.put(update)
+    return "OK", 200
 
-    application.run_polling()
+# Set the Telegram webhook
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
+    application.bot.set_webhook(webhook_url)
+    return f"Webhook set to {webhook_url}"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    run_telegram_bot()
+    # Flask app will serve the bot
+    app.run(host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
