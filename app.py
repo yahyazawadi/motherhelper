@@ -119,7 +119,7 @@ def telegram_webhook():
 # Set the Telegram webhook
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
-    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
+    webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
     application.bot.set_webhook(webhook_url)
     return f"Webhook set to {webhook_url}"
 
