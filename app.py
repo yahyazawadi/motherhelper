@@ -6,6 +6,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from datetime import datetime, timedelta
 import pytz
 import re
+import logging
+
 from collections import deque
 from hijridate import Hijri, Gregorian
 from typing import Final
@@ -115,7 +117,10 @@ async def telegram_webhook():
     update = Update.de_json(request.get_json(), application.bot)
     await application.update_queue.put(update)
     return "OK", 200
-
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 # Set the webhook route for setting it via a GET request
 @app.route('/set_webhook', methods=['GET'])
 async def set_webhook():
@@ -135,3 +140,5 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     # Start Flask app to serve the bot
     app.run(host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
+    logger = logging.getLogger(__name__)
+
