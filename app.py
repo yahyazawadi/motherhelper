@@ -121,25 +121,24 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 # Set the webhook route for setting it via a GET request
-@app.route(f"/{TOKEN}", methods=["POST"])
-def telegram_webhook():
-    json_string = request.get_data().decode('utf-8')
-    update = Update.de_json(json_string, application.bot)
-    application.process_update(update)
-    return "OK", 200
-
 @app.route('/set_webhook', methods=['GET'])
-def set_webhook():
-    webhook_url = f"{request.url_root}{TOKEN}"
-    success = application.bot.set_webhook(webhook_url)
-    if success:
-        return f"Webhook set successfully to {webhook_url}"
-    else:
-        return "Failed to set webhook", 500
+async def set_webhook():
+    webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
+    
+    try:
+        success = await application.bot.set_webhook(webhook_url)
+        if success:
+            return f"Webhook set successfully to {webhook_url}"
+        else:
+            return "Failed to set webhook", 500
+    except Exception as e:
+        logging.error(f"Error setting webhook: {str(e)}")
+        return f"Error setting webhook: {str(e)}", 500
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    # Start Flask app to serve the bot
+    app.run(host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
+    logger = logging.getLogger(__name__)
 
