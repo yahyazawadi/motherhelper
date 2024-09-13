@@ -35,3 +35,5 @@ stack-data==0.6.3
 tornado==6.4
 traitlets==5.14.3
 wcwidth==0.2.13
+Flask==2.3.2
+gunicorn==21.0.0
