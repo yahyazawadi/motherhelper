@@ -122,7 +122,7 @@ RENDER_EXTERNAL_URL = os.getenv('RENDER_EXTERNAL_URL')
 url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
 
 # Set the webhook
-response = requests.get(f'https://api.telegram.org/bot{TOKEN}/setWebhook?url={url}')
+response = request.get(f'https://api.telegram.org/bot{TOKEN}/setWebhook?url={url}')
 
 
 # Set the Telegram webhook
