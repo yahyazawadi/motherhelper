@@ -111,32 +111,19 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle
 
 # Telegram webhook route
 @app.route(f"/{TOKEN}", methods=["POST"])
-def telegram_webhook():
+async def telegram_webhook():
     update = Update.de_json(request.get_json(), application.bot)
-    application.update_queue.put(update)
+    await application.update_queue.put(update)
     return "OK", 200
 
-RENDER_EXTERNAL_URL = os.getenv('RENDER_EXTERNAL_URL')
-
-# Correct webhook URL without duplicating https://
-url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
-
-# Set the webhook
-response = request.get(f'https://api.telegram.org/bot{TOKEN}/setWebhook?url={url}')
-
-
-# Set the Telegram webhook
+# Set the webhook route for setting it via a GET request
 @app.route('/set_webhook', methods=['GET'])
-def set_webhook():
+async def set_webhook():
     webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
-    application.bot.set_webhook(webhook_url)
+    await application.bot.set_webhook(webhook_url)
     return f"Webhook set to {webhook_url}"
-if response.status_code == 200:
-    print("Webhook set successfully!")
-else:
-    print(f"Failed to set webhook. Status Code: {response.status_code}")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    # Flask app will serve the bot
+    # Start Flask app to serve the bot
     app.run(host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
