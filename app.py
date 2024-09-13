@@ -116,12 +116,25 @@ def telegram_webhook():
     application.update_queue.put(update)
     return "OK", 200
 
+RENDER_EXTERNAL_URL = os.getenv('RENDER_EXTERNAL_URL')
+
+# Correct webhook URL without duplicating https://
+url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
+
+# Set the webhook
+response = requests.get(f'https://api.telegram.org/bot{TOKEN}/setWebhook?url={url}')
+
+
 # Set the Telegram webhook
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
     webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
     application.bot.set_webhook(webhook_url)
     return f"Webhook set to {webhook_url}"
+if response.status_code == 200:
+    print("Webhook set successfully!")
+else:
+    print(f"Failed to set webhook. Status Code: {response.status_code}")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
