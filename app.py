@@ -120,8 +120,16 @@ async def telegram_webhook():
 @app.route('/set_webhook', methods=['GET'])
 async def set_webhook():
     webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}"
-    await application.bot.set_webhook(webhook_url)
-    return f"Webhook set to {webhook_url}"
+    
+    try:
+        success = await application.bot.set_webhook(webhook_url)
+        if success:
+            return f"Webhook set successfully to {webhook_url}"
+        else:
+            return "Failed to set webhook", 500
+    except Exception as e:
+        logging.error(f"Error setting webhook: {str(e)}")
+        return f"Error setting webhook: {str(e)}", 500
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
